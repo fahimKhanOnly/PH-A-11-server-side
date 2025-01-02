@@ -35,8 +35,16 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
 
+    const artifactsDB = client.db("artifactsDB");
+    const allArtifacts = artifactsDB.collection("allArtifacts");
 
 
+
+    app.post('/allArtifacts', async (req, res) => {
+      const data = req.body;
+      const result = await allArtifacts.insertOne(data);
+      res.send(result);
+    })
 
 
 
