@@ -18,7 +18,6 @@ app.use(cookieParser());
 
 
 
-
 const uri = `mongodb+srv://${process.env.DATABASE_USER}:${process.env.DATABASE_PASS}@cluster0.hhplj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -55,6 +54,13 @@ async function run() {
       const id = req.params.id;
       const query = {_id: new ObjectId(id)};
       const result = await allArtifacts.findOne(query);
+      res.send(result);
+    })
+
+    app.get('/myArtifacts', async (req, res) => {
+      const email = req.query.email;
+      const query = {myEmail: email};
+      const result = await allArtifacts.find(query).toArray();
       res.send(result);
     })
 
