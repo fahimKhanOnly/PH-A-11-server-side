@@ -91,6 +91,7 @@ async function run() {
       const result = await allArtifacts.updateOne(filter, updatedData, opt);
       res.send(result);
     })
+
     app.get('/myArtifacts/:id', async (req, res) => {
       const id = req.params.id;
       const query = {_id: new ObjectId(id)};
@@ -98,6 +99,12 @@ async function run() {
       res.send(result);
     })
 
+    app.get('/featuredArtifacts', async (req, res) => {
+      const likedArtifacts = await allArtifacts.find().toArray();
+      likedArtifacts.sort((a, b) => b.likes - a.likes);
+      const featuredArtifacts = likedArtifacts.slice(0, 6);
+      res.send(featuredArtifacts);
+    })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
