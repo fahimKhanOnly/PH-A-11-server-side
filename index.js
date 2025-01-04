@@ -71,6 +71,26 @@ async function run() {
       res.send(result);
     })
 
+    app.patch('/myArtifacts/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)};
+      const opt = {upsert: true};
+      const {artifactName, artifactImage, artifactType, historicalContext, createdAt, discoverdAt, discoverdBy, presentLocation} = req.body;
+      const updatedData = {
+        $set: {
+          artifactName: artifactName,
+          artifactImage: artifactImage, 
+          artifactType: artifactType, 
+          historicalContext: historicalContext, 
+          createdAt: createdAt, 
+          discoverdAt: discoverdAt, 
+          discoverdBy: discoverdBy, 
+          presentLocation: presentLocation,
+        }
+      };
+      const result = await allArtifacts.updateOne(filter, updatedData, opt);
+      res.send(result);
+    })
     app.get('/myArtifacts/:id', async (req, res) => {
       const id = req.params.id;
       const query = {_id: new ObjectId(id)};
