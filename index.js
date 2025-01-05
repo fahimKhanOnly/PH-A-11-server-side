@@ -17,6 +17,20 @@ app.use(cookieParser());
 
 
 
+const verifyToken = (req, res, next) => {
+  const token = req?.cookies?.artifactToken;
+  if (!token) {
+    return res.status(401).send({ message: 'unauthorized access' });
+  }
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({ message: 'unauthorized access' });
+    }
+    req.decodedData = decoded;
+    next();
+  })
+}
+
 
 const uri = `mongodb+srv://${process.env.DATABASE_USER}:${process.env.DATABASE_PASS}@cluster0.hhplj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -39,6 +53,18 @@ async function run() {
 
 
 
+    app.post('/jwt', (req, res) => {
+      const email = req.body;
+      const token = jwt.sign(email, process.env.JWT_SECRET, {expiresIn: '1h'});
+      res.cookie('artifactToken', token, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'strict'
+      }).send({success: true})
+    })
+
+
+
     app.post('/allArtifacts', async (req, res) => {
       const data = req.body;
       const result = await allArtifacts.insertOne(data);
@@ -57,8 +83,11 @@ async function run() {
       res.send(result);
     })
 
-    app.get('/myArtifacts', async (req, res) => {
+    app.get('/myArtifacts', verifyToken, async (req, res) => {
       const email = req.query.email;
+      if(req.decodedData.email !== email){
+        return res.status(403).send({message: 'forbidden access'});
+      }
       const query = {myEmail: email};
       const result = await allArtifacts.find(query).toArray();
       res.send(result);
@@ -92,8 +121,8 @@ async function run() {
       res.send(result);
     })
 
-    app.get('/myArtifacts/:id', async (req, res) => {
-      const id = req.params.id;
+    app.get('/myArtifacts', async (req, res) => {
+      const id = req.params._id;
       const query = {_id: new ObjectId(id)};
       const result = await allArtifacts.findOne(query);
       res.send(result);
@@ -105,6 +134,8 @@ async function run() {
       const featuredArtifacts = likedArtifacts.slice(0, 6);
       res.send(featuredArtifacts);
     })
+
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
