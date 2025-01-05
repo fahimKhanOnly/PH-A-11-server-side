@@ -135,7 +135,12 @@ async function run() {
       res.send(featuredArtifacts);
     })
 
-
+    app.get('/findArtifacts', async (req, res) => {
+      const keyword = req.query.name;
+      const artifacts = await allArtifacts.find().toArray();
+      const results = artifacts.filter(artifact => artifact.artifactName.toLowerCase().replace(/\s+/g, '').trim().includes(keyword));
+      res.send(results);
+    })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
