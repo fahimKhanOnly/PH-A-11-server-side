@@ -9,7 +9,7 @@ const port = process.env.PORT || 5000;
 
 
 app.use(cors({
-  origin: ['http://localhost:5173'],
+  origin: ['http://localhost:5173', 'https://steady-strudel-46e00d.netlify.app'],
   credentials: true,
 }));
 app.use(express.json());
@@ -50,7 +50,7 @@ async function run() {
 
     const artifactsDB = client.db("artifactsDB");
     const allArtifacts = artifactsDB.collection("allArtifacts");
-
+    const likedDB = artifactsDB.collection("likedDB");
 
 
     app.post('/jwt', (req, res) => {
@@ -58,8 +58,8 @@ async function run() {
       const token = jwt.sign(email, process.env.JWT_SECRET, {expiresIn: '1h'});
       res.cookie('artifactToken', token, {
         httpOnly: true,
-        secure: false,
-        sameSite: 'strict'
+        secure:  process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
       }).send({success: true})
     })
 
@@ -140,6 +140,32 @@ async function run() {
       const artifacts = await allArtifacts.find().toArray();
       const results = artifacts.filter(artifact => artifact.artifactName.toLowerCase().replace(/\s+/g, '').trim().includes(keyword));
       res.send(results);
+    })
+
+    app.post('/manageLikes', async (req, res) => {
+      const data = req.body;
+      const result = await likedDB.insertOne(data);
+      res.send(result);
+    })
+
+    app.get('/likedList', async (req, res) => {
+      const email = req.query.email;
+      const id = req.query.id;
+      const result = await likedDB.find().toArray();
+      let filteredLike = [];
+      result.map(res => {
+        if(res.id === id && res.userEmail === email){
+          filteredLike.push(res);
+        }
+      });
+      res.send(...filteredLike);
+    })
+
+    app.delete('/likedList/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = {id: id};
+      const result = await likedDB.deleteOne(query);
+      res.send(result);
     })
 
     // Send a ping to confirm a successful connection
