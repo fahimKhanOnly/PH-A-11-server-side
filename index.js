@@ -168,6 +168,44 @@ async function run() {
       res.send(result);
     })
 
+    app.get('/likedArtifacts', async (req, res) => {
+      const email = req.query.email;
+      const artifacts = await likedDB.find().toArray();
+      const filtered = artifacts.filter(liked => liked.userEmail === email);
+      res.send(filtered);
+    })
+
+    app.patch('/increaseLike/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}; 
+      const {likes} = await allArtifacts.findOne(query);
+      const filter = {_id: new ObjectId(id)};
+      const opt = {upsert: true};
+      const updatedLike = {
+        $set: {
+          likes: likes + 1,
+        }
+      };
+      const result = await allArtifacts.updateOne(filter, updatedLike, opt);
+      res.send(result);
+    })
+
+    app.patch('/decreaseLike/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const {likes} = await allArtifacts.findOne(query);
+      const filter = {_id: new ObjectId(id)};
+      const opt = {upsert: true};
+      const updatedLike = {
+        $set: {
+          likes: likes - 1,
+        }
+      };
+      const result = await allArtifacts.updateOne(filter, updatedLike, opt);
+      res.send(result);
+    })
+
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
